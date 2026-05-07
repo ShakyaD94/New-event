@@ -2,59 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plum Restaurant Solutions</title>
+    <title>Restaurant Insights Portal</title>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; color: #333; background: #f9f9f9; }
-        header { background: #1a1a1a; color: white; padding: 60px 20px; text-align: center; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: white; padding: 30px; border-radius: 8px; border: 1px solid #eee; text-align: center; }
-        h2 { color: #007cba; }
-        button { 
-            background: #007cba; color: white; border: none; padding: 12px 25px; 
-            font-size: 16px; border-radius: 5px; cursor: pointer; transition: 0.3s; 
-        }
-        button:hover { background: #005a87; }
-        #debug-log { 
-            background: #222; color: #0f0; padding: 15px; margin-top: 40px; 
-            border-radius: 5px; font-family: monospace; height: 150px; overflow-y: auto; 
-        }
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+        .section { background: white; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; }
+        button { background: #007cba; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; }
+        #log { background: #333; color: #0f0; padding: 10px; font-family: monospace; height: 100px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Plum Restaurant POS & Software</h1>
-        <p>Optimizing workflows for modern field sales teams.</p>
-    </header>
+    <h1>Restaurant Industry Insights</h1>
 
-    <div class="container">
-        <div class="grid">
-            <div class="card">
-                <h2>Point of Sale Systems</h2>
-                <p>High-fidelity hardware for fast-paced dining.</p>
-                <button onclick="restaurantTrack('Viewed POS Hardware', {productId: 'Plum-X1', category: 'Hardware'})">View Hardware Details</button>
-            </div>
-
-            <div class="card">
-                <h2>Software Modules</h2>
-                <p>Manage inventory and staff from one mobile-first CRM.</p>
-                <button onclick="restaurantTrack('Software Demo Requested', {industry: 'Restaurant', interest_level: 'High'})">Request Software Demo</button>
-            </div>
-
-            <div class="card">
-                <h2>Starter Package</h2>
-                <p>Get started today for only $199.00</p>
-                <button onclick="restaurantTrack('Purchase Made', {amount: 199.00, plan: 'Starter', productId: 'PKG-01'})">Buy Now</button>
-            </div>
-        </div>
-
-        <div id="debug-log">Log: Waiting for restaurant interaction...</div>
+    <div class="section">
+        <h2>Latest Research</h2>
+        <p>Labor Cost Trends 2025: Analysis for POS Managers.</p>
+        <button onclick="trackArticle('Labor Cost Trends 2025')">Read Article</button>
     </div>
 
+    <div class="section">
+        <h2>Quick Actions</h2>
+        <button onclick="restaurantTrack('Purchase Made', {amount: 199.00})">Purchase POS</button>
+    </div>
+
+    <div id="log">Waiting for interaction...</div>
+
     <script>
-        // Mautic Loader Script
         (function(w,d,t,u,n,a,m){
             w['MauticTrackingObject']=n;
             w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)},
@@ -63,36 +36,45 @@
             a.async=1; a.src=u; m.parentNode.insertBefore(a,m)
         })(window,document,'script','https://d2.altametrics.com/mtc.js','mt');
 
+        function log(msg) {
+            document.getElementById('log').innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+        }
+
+        // 1. Your specific request: The 'Event' type track
+        function trackArticle(title) {
+            // This sends the data as a formal Mautic Event
+            mt('send', 'event', {
+                category: 'Content',
+                action: 'Article Read',
+                name: title
+            });
+
+            // ALSO: Send as pageview so it appears in your Timeline UI as you expect
+            mt('send', 'pageview', {
+                'mt_event': 'Article Read',
+                'page_title': title,
+                'page_url': window.location.origin + window.location.pathname + "?article=" + title.replace(/\s+/g, '_') + "&t=" + Date.now()
+            });
+
+            log(`Sent Article Event: ${title}`);
+        }
+
+        // 2. Standard Restaurant Action
         function restaurantTrack(eventName, data) {
-            const logDiv = document.getElementById('debug-log');
             const ts = Date.now();
-            
-            // Format data for the URL to ensure it's visible in the Mautic Toggle
             const params = new URLSearchParams(data).toString();
-            
-            // Clean URL: Uses only the timestamp to force uniqueness
             const cleanUrl = window.location.origin + window.location.pathname + "?" + params + "&t=" + ts;
 
-            // 1. Sync data with Contact Fields for CRM segmentation
-            for (let key in data) {
-                mt('set', key, data[key]);
-            }
+            for (let key in data) { mt('set', key, data[key]); }
 
-            // 2. Send unique hit to Mautic
             mt('send', 'pageview', {
                 'mt_event': eventName,
                 'page_title': eventName, 
                 'page_url': cleanUrl,
                 ...data
             });
-
-            logDiv.innerHTML += `[${new Date().toLocaleTimeString()}] Recorded: ${eventName}<br>`;
-            logDiv.scrollTop = logDiv.scrollHeight;
+            log(`Sent: ${eventName}`);
         }
-
-        document.addEventListener('mauticPageEventDelivered', function() {
-            console.log("Mautic confirmed receipt of restaurant action.");
-        });
     </script>
 </body>
 </html>
