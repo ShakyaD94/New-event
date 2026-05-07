@@ -68,17 +68,25 @@
 }
 
         // 3. Identification + Event
-        function trackWithContact(eventName) {
-            const email = 'debug_' + Math.floor(Math.random() * 1000) + '@example.com';
-            mt('send', 'pageview', {
-                'mt_event': eventName,
-                'page_title': eventName,
-                'firstname': 'Debug', 
-                'lastname': 'User',
-                'email': email
-            });
-            log(`→ Contact event "${eventName}" sent for ${email}`, 'success');
-        }
+        function trackCustomEvent(eventName, data) {
+    const uniqueID = Date.now();
+    
+    // 1. We 'set' the custom data first. 
+    // If you have a custom field in Mautic named 'amount', this maps to it.
+    for (let key in data) {
+        mt('set', key, data[key]);
+    }
+
+    // 2. We 'send' the event.
+    // This keeps the header clean while attaching the data to the session.
+    mt('send', 'pageview', {
+        'mt_event': eventName,
+        'page_title': eventName, // Keeps header as "Purchase Made"
+        'page_url': window.location.origin + window.location.pathname + '?event=' + eventName + '&t=' + uniqueID
+    });
+
+    log(`→ Sent "${eventName}". Metadata is now attached to contact session.`, 'success');
+}
 
         // Listen for Mautic confirmation
         document.addEventListener('mauticPageEventDelivered', function(e) {
