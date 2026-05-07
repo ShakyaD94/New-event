@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MauticJS Debug Demo</title>
-<style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MauticJS Debug Demo12</title>
+    <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         button { padding: 10px 20px; margin: 10px; background: #007cba; color: white; border: none; cursor: pointer; border-radius: 4px; }
         button:hover { background: #005a87; }
@@ -12,31 +12,30 @@
         .error { color: red; }
         .success { color: green; }
         h2 { margin-top: 30px; }
-</style>
+    </style>
 </head>
 <body>
-<h1>MauticJS Tracking Debug Demo</h1>
-<p>Click buttons to test. Check <strong>Console/Network tabs</strong> + log below. Replace <code>your-mautic-instance.com</code> with your Mautic URL.</p>
-<!-- MauticJS Loader -->
-<script>
-    (function(w,d,t,u,n,a,m){
-        w['MauticTrackingObject']=n;
-        w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)},
-        a=d.createElement(t),
-        m=d.getElementsByTagName(t)[0];
-        a.async=1; a.src=u; m.parentNode.insertBefore(a,m)
-    })(window,document,'script','https://d2.altametrics.com/mtc.js','mt');
-</script>
- 
+    <h1>MauticJS Tracking Debug Demo</h1>
+    <p>Check your Mautic timeline after clicking. Use a unique email to see a fresh contact.</p>
+
+    <script>
+        (function(w,d,t,u,n,a,m){
+            w['MauticTrackingObject']=n;
+            w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)},
+            a=d.createElement(t),
+            m=d.getElementsByTagName(t)[0];
+            a.async=1; a.src=u; m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://d2.altametrics.com/mtc.js','mt');
+    </script>
+
     <button onclick="trackPageview()">1. Track Pageview</button>
-<button onclick="trackCustomEvent('button_clicked', {productId: 123})">2. Button Click Event</button>
-<button onclick="trackCustomEvent('purchase', {amount: 99.99, email: 'demo@example.com'})">3. Purchase Event</button>
-<button onclick="trackWithContact('form_submit')">4. Form Submit w/ Contact</button>
-<button onclick="testDirectXHR()">5. Direct /mtc/event Test</button>
- 
+    <button onclick="trackCustomEvent('Button Clicked', {productId: 123})">2. Button Click Event</button>
+    <button onclick="trackCustomEvent('Purchase Made', {amount: 99.99})">3. Purchase Event</button>
+    <button onclick="trackWithContact('Form Submitted')">4. Form Submit w/ Contact</button>
+
     <h2>Debug Log</h2>
-<div id="log"></div>
- 
+    <div id="log"></div>
+
     <script>
         const logDiv = document.getElementById('log');
         function log(message, className = '') {
@@ -46,76 +45,42 @@
             entry.textContent = `[${time}] ${message}`;
             logDiv.appendChild(entry);
             logDiv.scrollTop = logDiv.scrollHeight;
-            console.log(message);
         }
- 
-        // Override mt() for debugging
-        window.mt = window.mt || function(){};
-        const originalMt = window.mt;
-        window.mt = function(cmd, ...args) {
-            log(`MT CALL: mt('${cmd}', ${JSON.stringify(args)})`);
-            originalMt(cmd, ...args);
-        };
- 
-        // Track pageview
+
+        // 1. Standard Pageview
         function trackPageview() {
-            mt('send', 'pageview', {'mt_event': 'demo_pageview', 'page_category': 'debug'});
-            log('→ Pageview sent');
+            mt('send', 'pageview');
+            log('→ Standard Pageview sent');
         }
- 
-        // Custom event
+
+        // 2. Custom event (Updates the "Event Name" column in Mautic)
         function trackCustomEvent(eventName, data) {
-            mt('send', 'pageview', {'mt_event': eventName, ...data});
-            log(`→ Custom "${eventName}" sent: ${JSON.stringify(data)}`);
-        }
- 
-        // With contact ID
-        function trackWithContact(eventName) {
             mt('send', 'pageview', {
                 'mt_event': eventName,
-                'firstname': 'Debug', 'lastname': 'User',
-                'email': 'debug@example.com'
+                'page_title': eventName, // This changes the "Event Name" in your screenshot
+                'page_url': window.location.href + '#' + eventName.replace(/\s+/g, '_'), 
+                ...data
             });
-            log(`→ Contact event "${eventName}" sent`);
+            log(`→ Custom "${eventName}" sent. Mautic will now show "${eventName}" in the Event Name column.`, 'success');
         }
- 
-        // Direct XHR test to /mtc/event
-        function testDirectXHR() {
-            const url = 'https://your-mautic-instance.com/mtc/event';
-            log(`Testing direct POST to: ${url}`);
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', url, true);
-            xhr.withCredentials = true;
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    const className = xhr.status === 200 ? 'success' : 'error';
-                    const response = xhr.responseText;
-                    log(`XHR ${xhr.status}: ${response}`, className);
-                    try {
-                        const json = JSON.parse(response);
-                        if (json.success === 1) log('✅ Mautic accepted event!', 'success');
-                        else log('❌ Mautic rejected: ' + JSON.stringify(json), 'error');
-                    } catch(e) {
-                        log('Invalid JSON response: ' + response, 'error');
-                    }
-                }
-            };
-            xhr.onerror = function() {
-                log('XHR Network/CORS Error - check Console', 'error');
-            };
-            const payload = {
-                type: 'pageview',
-                'mt_event': 'direct_test',
-                email: 'direct-test@example.com'
-            };
-            xhr.send(JSON.stringify(payload));
+
+        // 3. Identification + Event
+        function trackWithContact(eventName) {
+            const email = 'debug_' + Math.floor(Math.random() * 1000) + '@example.com';
+            mt('send', 'pageview', {
+                'mt_event': eventName,
+                'page_title': eventName,
+                'firstname': 'Debug', 
+                'lastname': 'User',
+                'email': email
+            });
+            log(`→ Contact event "${eventName}" sent for ${email}`, 'success');
         }
- 
-        // Listen for Mautic events
+
+        // Listen for Mautic confirmation
         document.addEventListener('mauticPageEventDelivered', function(e) {
-            log('Mautic Event Delivered: ' + JSON.stringify(e.detail), 'success');
+            log('✅ Mautic Confirmed Receipt: ' + JSON.stringify(e.detail.pageview), 'success');
         });
-</script>
+    </script>
 </body>
 </html>
