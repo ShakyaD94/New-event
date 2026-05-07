@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GitLab to Mautic Event Tracker dshakya</title>
+
+    <!-- 1. Mautic Tracking Script (Standard) -->
+    <<script>
+(function(w,d,t,u,n,a,m){
+    w['MauticTrackingObject']=n;
+ 
+    w[n]=w[n]||function(){
+        (w[n].q=w[n].q||[]).push(arguments)
+    };
+ 
+    a=d.createElement(t);
+    m=d.getElementsByTagName(t)[0];
+ 
+    a.async=1;
+    a.src=u;
+ 
+    a.onload = function() {
+ 
+        console.log('Mautic Loaded');
+ 
+        // REQUIRED FIRST PAGEVIEW
+        mt('send', 'pageview');
+ 
+        // TEST CUSTOM EVENT AS VIRTUAL PAGE
+        setTimeout(function() {
+ 
+            mt('send', 'pageview', {
+                url: window.location.origin + '/event/add-to-cart',
+                title: 'Add To Cart'
+            });
+ 
+            console.log('Custom pageview sent');
+ 
+        }, 2000);
+ 
+    };
+ 
+    m.parentNode.insertBefore(a,m);
+ 
+})(window,document,'script','https://d2.altametrics.com/mtc.js','mt');
+</script>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 50px; font-family: sans-serif;">
+        <h2>Event Sent!</h2>
+        <p>The "Article Read" event for <strong>Labor Cost Trends 2025</strong> has been dispatched to Mautic.</p>
+    </div>
+</body>
+</html>
