@@ -55,14 +55,17 @@
 
         // 2. Custom event (Updates the "Event Name" column in Mautic)
         function trackCustomEvent(eventName, data) {
-            mt('send', 'pageview', {
-                'mt_event': eventName,
-                'page_title': eventName, // This changes the "Event Name" in your screenshot
-                'page_url': window.location.href + '#' + eventName.replace(/\s+/g, '_'), 
-                ...data
-            });
-            log(`→ Custom "${eventName}" sent. Mautic will now show "${eventName}" in the Event Name column.`, 'success');
-        }
+    // We add a timestamp to the URL to force Mautic to see this as a 100% unique event
+    const uniqueID = Date.now(); 
+    
+    mt('send', 'pageview', {
+        'mt_event': eventName,
+        'page_title': eventName, 
+        'page_url': window.location.origin + window.location.pathname + '?event=' + eventName + '&t=' + uniqueID,
+        ...data
+    });
+    log(`→ Force-sending "${eventName}"... check Mautic in 10 seconds.`, 'success');
+}
 
         // 3. Identification + Event
         function trackWithContact(eventName) {
