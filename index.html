@@ -1,81 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MauticJS Custom Events Demo</title>
-<style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        button { padding: 10px 20px; margin: 10px; background: #007cba; color: white; border: none; cursor: pointer; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mautic Force Tracker</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; line-height: 1.6; }
+        button { padding: 12px 24px; margin: 10px; cursor: pointer; background: #007cba; color: white; border: none; border-radius: 5px; font-weight: bold; }
         button:hover { background: #005a87; }
-        #log { background: #f5f5f5; padding: 10px; margin-top: 20px; height: 200px; overflow-y: scroll; border: 1px solid #ddd; }
-</style>
+        #log { background: #222; color: #0f0; padding: 15px; height: 200px; overflow-y: auto; font-family: monospace; border-radius: 5px; }
+    </style>
 </head>
 <body>
-<h1>MauticJS Tracking Demo</h1>
-<p>Click buttons to trigger custom events/pageviews. Check browser console and your Mautic contact timeline.</p>
-<!-- Full MauticJS Loader Script -->
-<script>
-    (function(w,d,t,u,n,a,m){
-        w['MauticTrackingObject']=n;
-        w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)},
-        a=d.createElement(t),
-        m=d.getElementsByTagName(t)[0];
-        a.async=1; a.src=u; m.parentNode.insertBefore(a,m)
-    })(window,document,'script','https://d2.altametrics.com/mtc.js','mt');
-</script>
- 
-    <button onclick="trackPageview()">Track Pageview</button>
-<button onclick="trackCustomEvent('button_clicked', {productId: 123})">Track Button Click</button>
-<button onclick="trackCustomEvent('purchase', {amount: 99.99, email: 'demo@example.com'})">Simulate Purchase</button>
-<button onclick="trackWithContact('form_submit')">Submit Form (with contact ID)</button>
- 
+
+    <h2>Mautic Force Capture Debug</h2>
+    <p>Every click below is forced as a unique event.</p>
+    
+    <button onclick="forceTrack('Purchase Made', {amount: 99.99, currency: 'USD'})">Force Purchase Event</button>
+    <button onclick="forceTrack('Button Clicked', {productId: 'XYZ-123'})">Force Button Click</button>
+
     <div id="log"></div>
- 
+
     <script>
-        // Helper function to log events
-        function log(message) {
-            const logDiv = document.getElementById('log');
-            logDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
-            logDiv.scrollTop = logDiv.scrollHeight;
-            console.log(message);
+        // Mautic Loader
+        (function(w,d,t,u,n,a,m){
+            w['MauticTrackingObject']=n;
+            w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)},
+            a=d.createElement(t),
+            m=d.getElementsByTagName(t)[0];
+            a.async=1; a.src=u; m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://d2.altametrics.com/mtc.js','mt');
+
+        function log(msg) {
+            const l = document.getElementById('log');
+            l.innerHTML += `> ${new Date().toLocaleTimeString()}: ${msg}<br>`;
+            l.scrollTop = l.scrollHeight;
         }
- 
-        // Basic pageview
-        function trackPageview() {
-            mt('send', 'pageview', {
-                'mt_event': 'demo_pageview',
-                'page_category': 'demo'
-            });
-            log('Pageview tracked with custom data');
-        }
- 
-        // Custom event/pageview
-        function trackCustomEvent(eventName, data) {
+
+        /**
+         * THE FORCE TRACKER
+         */
+        function forceTrack(eventName, data) {
+            // Generate a truly unique ID for this specific click
+            const burstId = Math.random().toString(36).substring(7);
+            const timestamp = Date.now();
+            
+            // Convert data to URL params for visibility in the "Page URL" line
+            const params = new URLSearchParams(data).toString();
+            
+            // Construct a fake unique URL
+            const forceUrl = window.location.origin + window.location.pathname + "?" + params + "&force_id=" + burstId + "&t=" + timestamp;
+
+            log(`Forcing event: ${eventName}...`);
+
+            // Use 'set' to ensure data hits the contact profile sidebar
+            for (let key in data) {
+                mt('set', key, data[key]);
+            }
+
+            // Use 'send' to create the timeline entry
             mt('send', 'pageview', {
                 'mt_event': eventName,
+                'page_title': eventName, 
+                'page_url': forceUrl,
                 ...data
             });
-            log(`Custom event "${eventName}" tracked: ` + JSON.stringify(data));
         }
- 
-        // With explicit contact identification
-        function trackWithContact(eventName) {
-            mt('send', 'pageview', {
-                'mt_event': eventName,
-                'firstname': 'Demo',
-                'lastname': 'User',
-                'email': 'demo@example.com'
-            });
-            log('Event tracked with contact identification');
-        }
- 
-        // Listen for Mautic events (optional)
-        document.addEventListener('mauticPageEventDelivered', function(e) {
-            if (e.detail.response && e.detail.response.events && e.detail.response.events.tracked) {
-                log('Mautic confirmed: ' + JSON.stringify(e.detail.response.events.tracked));
-            }
+
+        document.addEventListener('mauticPageEventDelivered', function() {
+            log('✅ Mautic Confirmed Receipt');
         });
-</script>
+    </script>
 </body>
 </html>
