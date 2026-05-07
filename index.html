@@ -2,28 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Restaurant Software Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plum Restaurant Insights</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 40px; background: #f4f7f9; }
-        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        h2 { color: #007cba; }
-        button { background: #007cba; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #005a87; }
-        #log { background: #222; color: #0f0; padding: 15px; margin-top: 20px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f0f4f7; color: #333; }
+        header { background: #1a1a1a; color: white; padding: 40px 20px; text-align: center; }
+        .container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-left: 6px solid #007cba; }
+        h2 { margin-top: 0; color: #007cba; }
+        p { font-size: 18px; line-height: 1.6; color: #555; }
+        .btn-container { margin-top: 25px; }
+        button { 
+            background-color: #007cba; color: white; border: none; padding: 15px 30px; 
+            font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; 
+            transition: all 0.3s ease; 
+        }
+        button:hover { background-color: #005a87; transform: translateY(-2px); }
+        #status-log { 
+            margin-top: 30px; background: #222; color: #51ff00; padding: 15px; 
+            border-radius: 6px; font-family: 'Consolas', monospace; font-size: 13px; 
+            height: 100px; overflow-y: auto;
+        }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>Restaurant Industry Insights</h2>
-        <p>Topic: <strong>Labor Cost Trends 2025</strong></p>
-        <button onclick="trackArticleEvent('Labor Cost Trends 2025')">Read Full Article</button>
-        
-        <div id="log">Status: Ready to track...</div>
+    <header>
+        <h1>Restaurant Management Portal</h1>
+        <p>Advanced Analytics & Industry Trends</p>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2>Featured Analysis</h2>
+            <p><strong>Article:</strong> Labor Cost Trends 2025: Strategies for the Modern Kitchen.</p>
+            <div class="btn-container">
+                <button onclick="trackArticleEvent('Labor Cost Trends 2025')">Read Full Article</button>
+            </div>
+        </div>
+
+        <div id="status-log">System: Ready. Waiting for restaurant action...</div>
     </div>
 
     <script>
-        // Mautic Loader
+        // --- 1. Mautic Tracking Loader ---
         (function(w,d,t,u,n,a,m){
             w['MauticTrackingObject']=n;
             w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)},
@@ -32,27 +54,47 @@
             a.async=1; a.src=u; m.parentNode.insertBefore(a,m)
         })(window,document,'script','https://d2.altametrics.com/mtc.js','mt');
 
+        // --- 2. Helper for Console Logging ---
+        function updateLog(msg) {
+            const logBox = document.getElementById('status-log');
+            logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        /**
+         * --- 3. The Article Event Function ---
+         * Maps 'Category' and 'Action' as forced rows in the Toggle Details.
+         */
         function trackArticleEvent(title) {
-            const status = document.getElementById('log');
-            
-            // 1. Send formal event for Reports/Automation
+            updateLog(`Initiating track for: ${title}`);
+
+            // A. Send formal event (For Mautic Reports & Automation)
             mt('send', 'event', {
                 category: 'Content',
                 action: 'Article Read',
                 name: title
             });
 
-            // 2. Send UI override for the Contact Timeline
+            // B. Force Mautic to create the custom rows in the Timeline UI
+            // These will appear in the "Toggle details" section
+            mt('set', 'Category', 'Content');
+            mt('set', 'Action', 'Article Read');
+            mt('set', 'Topic', title);
+
+            // C. Send the Pageview hit that updates the Timeline Header
             mt('send', 'pageview', {
-                'mt_event': title,          // Header
-                'Category': 'Content',      // Custom Row 1
-                'Action': 'Article Read',    // Custom Row 2
+                'mt_event': title, // This becomes the "Event Name" (Bold Header)
                 'page_title': title,
-                'page_url': window.location.href + "?t=" + Date.now()
+                'page_url': window.location.href + "?article=" + encodeURIComponent(title) + "&t=" + Date.now()
             });
 
-            status.innerHTML = `[${new Date().toLocaleTimeString()}] ✅ Event Sent: ${title}`;
+            updateLog(`✅ Successfully pushed to Mautic.`);
         }
+
+        // Listener for success confirmation
+        document.addEventListener('mauticPageEventDelivered', function() {
+            updateLog('Mautic: Data delivery confirmed.');
+        });
     </script>
 </body>
 </html>
