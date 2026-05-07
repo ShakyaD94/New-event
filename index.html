@@ -1,60 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>GitLab to Mautic Event Tracker dshakya</title>
-
-    <!-- 1. Mautic Tracking Script (Standard) -->
-    <<script>
-(function(w,d,t,u,n,a,m){
- 
-    w['MauticTrackingObject']=n;
- 
-    w[n]=w[n]||function(){
-        (w[n].q=w[n].q||[]).push(arguments)
-    };
- 
-    a=d.createElement(t);
-    m=d.getElementsByTagName(t)[0];
- 
-    a.async=1;
-    a.src=u;
- 
-    a.onload = function() {
- 
-        console.log('Mautic Loaded');
- 
-        // STEP 1: IDENTIFY CONTACT
-        mt('send', 'identify', {
-            email: 'test@example.com',
-            firstname: 'Test',
-            lastname: 'User'
-        });
- 
-        // STEP 2: SEND PAGEVIEW
-        mt('send', 'pageview');
- 
-        // STEP 3: SEND CUSTOM TRACKING
-        setTimeout(function(){
- 
-            history.pushState({}, '', '/event/add-to-cart');
- 
-            mt('send', 'pageview');
- 
-            console.log('Custom Event Sent');
- 
-        }, 2000);
- 
-    };
- 
-    m.parentNode.insertBefore(a,m);
- 
-})(window,document,'script','https://d2.altametrics.com/mtc.js','mt');
-</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MauticJS Custom Events Demo</title>
+<style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px; background: #007cba; color: white; border: none; cursor: pointer; }
+        button:hover { background: #005a87; }
+        #log { background: #f5f5f5; padding: 10px; margin-top: 20px; height: 200px; overflow-y: scroll; border: 1px solid #ddd; }
+</style>
 </head>
 <body>
-    <div style="text-align: center; margin-top: 50px; font-family: sans-serif;">
-        <h2>Event Sent!</h2>
-        <p>The "Article Read" event for <strong>Labor Cost Trends 2025</strong> has been dispatched to Mautic.</p>
-    </div>
+<h1>MauticJS Tracking Demo</h1>
+<p>Click buttons to trigger custom events/pageviews. Check browser console and your Mautic contact timeline.</p>
+<!-- Full MauticJS Loader Script -->
+<script>
+    (function(w,d,t,u,n,a,m){
+        w['MauticTrackingObject']=n;
+        w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)},
+        a=d.createElement(t),
+        m=d.getElementsByTagName(t)[0];
+        a.async=1; a.src=u; m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://d2.altametrics.com/mtc.js','mt');
+</script>
+ 
+    <button onclick="trackPageview()">Track Pageview</button>
+<button onclick="trackCustomEvent('button_clicked', {productId: 123})">Track Button Click</button>
+<button onclick="trackCustomEvent('purchase', {amount: 99.99, email: 'demo@example.com'})">Simulate Purchase</button>
+<button onclick="trackWithContact('form_submit')">Submit Form (with contact ID)</button>
+ 
+    <div id="log"></div>
+ 
+    <script>
+        // Helper function to log events
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+ 
+        // Basic pageview
+        function trackPageview() {
+            mt('send', 'pageview', {
+                'mt_event': 'demo_pageview',
+                'page_category': 'demo'
+            });
+            log('Pageview tracked with custom data');
+        }
+ 
+        // Custom event/pageview
+        function trackCustomEvent(eventName, data) {
+            mt('send', 'pageview', {
+                'mt_event': eventName,
+                ...data
+            });
+            log(`Custom event "${eventName}" tracked: ` + JSON.stringify(data));
+        }
+ 
+        // With explicit contact identification
+        function trackWithContact(eventName) {
+            mt('send', 'pageview', {
+                'mt_event': eventName,
+                'firstname': 'Demo',
+                'lastname': 'User',
+                'email': 'demo@example.com'
+            });
+            log('Event tracked with contact identification');
+        }
+ 
+        // Listen for Mautic events (optional)
+        document.addEventListener('mauticPageEventDelivered', function(e) {
+            if (e.detail.response && e.detail.response.events && e.detail.response.events.tracked) {
+                log('Mautic confirmed: ' + JSON.stringify(e.detail.response.events.tracked));
+            }
+        });
+</script>
 </body>
 </html>
