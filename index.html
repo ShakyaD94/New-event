@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MauticJS Debug Demo12</title>
+    <title>MauticJS Debug Demo - Final</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         button { padding: 10px 20px; margin: 10px; background: #007cba; color: white; border: none; cursor: pointer; border-radius: 4px; }
         button:hover { background: #005a87; }
         #log { background: #f5f5f5; padding: 15px; margin-top: 20px; height: 300px; overflow-y: scroll; border: 1px solid #ddd; font-family: monospace; font-size: 14px; white-space: pre-wrap; }
-        .error { color: red; }
         .success { color: green; }
-        h2 { margin-top: 30px; }
+        .info { color: blue; }
     </style>
 </head>
 <body>
-    <h1>MauticJS Tracking Debug Demo</h1>
-    <p>Check your Mautic timeline after clicking. Use a unique email to see a fresh contact.</p>
+    <h1>MauticJS Tracking Debug</h1>
+    <p>Check your Mautic timeline. Ensure you created custom fields for <strong>amount</strong> and <strong>productId</strong> first!</p>
 
     <script>
         (function(w,d,t,u,n,a,m){
@@ -53,42 +52,42 @@
             log('→ Standard Pageview sent');
         }
 
-        // 2. Custom event (Updates the "Event Name" column in Mautic)
+        // 2 & 3. Consolidated Custom Event Function
         function trackCustomEvent(eventName, data) {
-    // We add a timestamp to the URL to force Mautic to see this as a 100% unique event
-    const uniqueID = Date.now(); 
-    
-    mt('send', 'pageview', {
-        'mt_event': eventName,
-        'page_title': eventName, 
-        'page_url': window.location.origin + window.location.pathname + '?event=' + eventName + '&t=' + uniqueID,
-        ...data
-    });
-    log(`→ Force-sending "${eventName}"... check Mautic in 10 seconds.`, 'success');
-}
+            const uniqueID = Date.now();
+            
+            // Map data to custom fields (for segments)
+            for (let key in data) {
+                mt('set', key, data[key]);
+            }
 
-        // 3. Identification + Event
-        function trackCustomEvent(eventName, data) {
-    const uniqueID = Date.now();
-    
-    // This part sends the data to the Contact Fields you created in Step 1
-    for (let key in data) {
-        mt('set', key, data[key]);
-    }
+            // Send timeline event with clean header and unique URL
+            mt('send', 'pageview', {
+                'mt_event': eventName,
+                'page_title': eventName, 
+                'page_url': window.location.origin + window.location.pathname + '?event=' + eventName.replace(/\s+/g, '_') + '&t=' + uniqueID
+            });
 
-    // This part sends the Timeline Event with a clean header
-    mt('send', 'pageview', {
-        'mt_event': eventName,
-        'page_title': eventName, 
-        'page_url': window.location.origin + window.location.pathname + '?t=' + uniqueID
-    });
+            log(`→ Sent "${eventName}" with data: ${JSON.stringify(data)}`, 'success');
+        }
 
-    log(`→ Sent "${eventName}". Data ${JSON.stringify(data)} is now mapped to Contact Fields.`, 'success');
-}
+        // 4. Identification + Event
+        function trackWithContact(eventName) {
+            const uniqueID = Date.now();
+            const testEmail = 'user_' + uniqueID + '@example.com';
+            
+            mt('send', 'pageview', {
+                'email': testEmail,
+                'firstname': 'Test',
+                'mt_event': eventName,
+                'page_title': eventName,
+                'page_url': window.location.origin + window.location.pathname + '?event=form&t=' + uniqueID
+            });
+            log(`→ Identification sent for ${testEmail}`, 'info');
+        }
 
-        // Listen for Mautic confirmation
         document.addEventListener('mauticPageEventDelivered', function(e) {
-            log('✅ Mautic Confirmed Receipt: ' + JSON.stringify(e.detail.pageview), 'success');
+            log('✅ Mautic Confirmed Receipt', 'success');
         });
     </script>
 </body>
