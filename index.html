@@ -2,43 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Restaurant Insights Portal</title>
+    <title>Restaurant Software Portal</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 800px; margin: 40px auto; line-height: 1.6; background-color: #f0f4f7; }
-        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        h1 { color: #1a1a1a; text-align: center; }
-        h2 { color: #007cba; margin-top: 0; }
-        .article-box { border-left: 5px solid #007cba; padding-left: 15px; margin: 20px 0; background: #f9f9f9; padding: 15px; }
-        button { background: #007cba; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 40px; background: #f4f7f9; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        h2 { color: #007cba; }
+        button { background: #007cba; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; }
         button:hover { background: #005a87; }
-        #debug-console { background: #222; color: #0f0; padding: 15px; height: 150px; overflow-y: auto; font-family: monospace; border-radius: 5px; font-size: 13px; }
+        #log { background: #222; color: #0f0; padding: 15px; margin-top: 20px; border-radius: 4px; font-family: monospace; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <h1>Mautic Event Debugger</h1>
-
     <div class="card">
-        <h2>Expert Insights Section</h2>
-        <div class="article-box">
-            <strong>Featured Article:</strong>
-            <p>Labor Cost Trends 2025: Strategies for Restaurant Owners.</p>
-            <button onclick="trackArticleEvent('Labor Cost Trends 2025')">Read Full Article</button>
-        </div>
+        <h2>Restaurant Industry Insights</h2>
+        <p>Topic: <strong>Labor Cost Trends 2025</strong></p>
+        <button onclick="trackArticleEvent('Labor Cost Trends 2025')">Read Full Article</button>
+        
+        <div id="log">Status: Ready to track...</div>
     </div>
-
-    <div class="card">
-        <h2>Sales Interactions</h2>
-        <div class="article-box">
-            <p>Ready to upgrade your hardware?</p>
-            <button onclick="restaurantTrack('Purchase Made', {amount: 199.00, plan: 'Pro'})">Buy POS System</button>
-        </div>
-    </div>
-
-    <div id="debug-console">System ready... Click a button to track.</div>
 
     <script>
-        // Mautic Tracking Loader
+        // Mautic Loader
         (function(w,d,t,u,n,a,m){
             w['MauticTrackingObject']=n;
             w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)},
@@ -47,60 +32,27 @@
             a.async=1; a.src=u; m.parentNode.insertBefore(a,m)
         })(window,document,'script','https://d2.altametrics.com/mtc.js','mt');
 
-        function log(msg) {
-            const console = document.getElementById('debug-console');
-            console.innerHTML += `> ${new Date().toLocaleTimeString()}: ${msg}<br>`;
-            console.scrollTop = console.scrollHeight;
-        }
-
-        /**
-         * 1. THE ARTICLE EVENT (Your Request)
-         * This sends the exact data structure you provided.
-         */
         function trackArticleEvent(title) {
-            log(`Sending Event: ${title}...`);
-
-            // YOUR SPECIFIC CODE
+            const status = document.getElementById('log');
+            
+            // 1. Send formal event for Reports/Automation
             mt('send', 'event', {
                 category: 'Content',
                 action: 'Article Read',
                 name: title
             });
 
-            // COMPLEMENTARY UI TRACKER:
-            // This ensures the article title appears in the 'Event Name' column 
-            // of your timeline so you can see it without clicking the arrow.
+            // 2. Send UI override for the Contact Timeline
             mt('send', 'pageview', {
-                'mt_event': 'Article Read',
+                'mt_event': title,          // Header
+                'Category': 'Content',      // Custom Row 1
+                'Action': 'Article Read',    // Custom Row 2
                 'page_title': title,
-                'page_url': window.location.origin + window.location.pathname + "?article=" + encodeURIComponent(title) + "&t=" + Date.now()
+                'page_url': window.location.href + "?t=" + Date.now()
             });
+
+            status.innerHTML = `[${new Date().toLocaleTimeString()}] ✅ Event Sent: ${title}`;
         }
-
-        /**
-         * 2. STANDARD SALES TRACKER
-         */
-        function restaurantTrack(eventName, data) {
-            const ts = Date.now();
-            const params = new URLSearchParams(data).toString();
-            const uniqueUrl = window.location.origin + window.location.pathname + "?" + params + "&t=" + ts;
-
-            log(`Tracking Sales Action: ${eventName}...`);
-
-            // Map data to Contact Fields
-            for (let key in data) { mt('set', key, data[key]); }
-
-            mt('send', 'pageview', {
-                'mt_event': eventName,
-                'page_title': eventName, 
-                'page_url': uniqueUrl,
-                ...data
-            });
-        }
-
-        document.addEventListener('mauticPageEventDelivered', function() {
-            log('✅ Mautic Confirmed Receipt');
-        });
     </script>
 </body>
 </html>
