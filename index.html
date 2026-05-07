@@ -72,23 +72,26 @@
         }
 
         // 4. Identification + Event
-        function trackWithContact(eventName) {
-            const uniqueID = Date.now();
-            const testEmail = 'user_' + uniqueID + '@example.com';
-            
-            mt('send', 'pageview', {
-                'email': testEmail,
-                'firstname': 'Test',
-                'mt_event': eventName,
-                'page_title': eventName,
-                'page_url': window.location.origin + window.location.pathname + '?event=form&t=' + uniqueID
-            });
-            log(`→ Identification sent for ${testEmail}`, 'info');
-        }
+function trackCustomEvent(eventName, data) {
+    const uniqueID = Date.now();
+    
+    // 1. Still set the data for segments
+    for (let key in data) {
+        mt('set', key, data[key]);
+    }
 
-        document.addEventListener('mauticPageEventDelivered', function(e) {
-            log('✅ Mautic Confirmed Receipt', 'success');
-        });
+    // 2. We build a 'Search Query' for the URL so it shows up in the 'Page URL' row
+    const dataParams = Object.entries(data).map(([k, v]) => `${k}=${v}`).join('&');
+
+    mt('send', 'pageview', {
+        'mt_event': eventName,
+        'page_title': eventName, 
+        // We put the data into the URL so it's visible in your screenshot's "Page URL" line
+        'page_url': window.location.origin + window.location.pathname + '?' + dataParams + '&t=' + uniqueID
+    });
+
+    log(`→ Sent "${eventName}". Look for "${dataParams}" in the Page URL line in Mautic.`, 'success');
+}
     </script>
 </body>
 </html>
