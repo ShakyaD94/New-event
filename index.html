@@ -6,6 +6,7 @@
     <!-- 1. Mautic Tracking Script (Standard) -->
     <<script>
 (function(w,d,t,u,n,a,m){
+ 
     w['MauticTrackingObject']=n;
  
     w[n]=w[n]||function(){
@@ -22,18 +23,24 @@
  
         console.log('Mautic Loaded');
  
-        // REQUIRED FIRST PAGEVIEW
+        // STEP 1: IDENTIFY CONTACT
+        mt('send', 'identify', {
+            email: 'test@example.com',
+            firstname: 'Test',
+            lastname: 'User'
+        });
+ 
+        // STEP 2: SEND PAGEVIEW
         mt('send', 'pageview');
  
-        // TEST CUSTOM EVENT AS VIRTUAL PAGE
-        setTimeout(function() {
+        // STEP 3: SEND CUSTOM TRACKING
+        setTimeout(function(){
  
-            mt('send', 'pageview', {
-                url: window.location.origin + '/event/add-to-cart',
-                title: 'Add To Cart'
-            });
+            history.pushState({}, '', '/event/add-to-cart');
  
-            console.log('Custom pageview sent');
+            mt('send', 'pageview');
+ 
+            console.log('Custom Event Sent');
  
         }, 2000);
  
